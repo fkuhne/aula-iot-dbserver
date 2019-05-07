@@ -25,8 +25,8 @@ class WFclass
       
   private:      
     /* TODO: Informe aqui o nome e senha da rede Wi-Fi disponível. */
-    const char* c_ssid = "DBDevices"; // "DBLABDevices";
-    const char* c_pass = "!mP@db@dM"; // "@rdu!n0$";
+    const char* c_ssid = "DBLABDevices"; // "DBDevices";
+    const char* c_pass = "@rdu!n0$"; // "!mP@db@dM";
 
   int status;
 };

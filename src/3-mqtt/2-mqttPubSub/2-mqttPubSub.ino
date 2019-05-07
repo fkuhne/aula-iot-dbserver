@@ -93,10 +93,8 @@ void loop()
 
       /* TODO: publique o estado do botão no tópico de entrada,
            com mensagens "on" e "off". */
-      if (buttonState == HIGH) mqttClient.publish(subscribeTopic, "on");
-      else mqttClient.publish(subscribeTopic, "off");
     }
   }
 
   delay(10); /* Dá um tempo para o processador respirar... */
-}
+}.

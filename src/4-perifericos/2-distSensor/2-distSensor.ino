@@ -18,7 +18,6 @@
 
 HCSR04 hcsr04(TRIG_PIN, ECHO_PIN, 20, 4000);
 
-
 int lastTimeMsg = 0;
 
 void printBanner()

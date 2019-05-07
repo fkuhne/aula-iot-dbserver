@@ -1,46 +1,34 @@
 /*
- * DBLab - DBServer
- * Oficina prática de Internet das Coisas
- *
- * 09/2018
- *
- *
- * EXERCÍCIO 2 PERIFÉRICOS: SENSOR DE DISTÂNCIA.
- * 
- * Procure pelos TODO's no código e complete com a função necessária para
- *   implementar a função referida.
- *
- */
+   DBLab - DBServer
+   Oficina prática de Internet das Coisas
 
+   09/2018
+
+
+   EXERCÍCIO 2 PERIFÉRICOS: SENSOR DE DISTÂNCIA.
+
+   Procure pelos TODO's no código e complete com a função necessária para
+     implementar a função referida.
+
+*/
+
+#include <hcsr04.h>
 #include "wifi.h"
 #include "mqtt.h"
 
 #define TRIG_PIN D5
 #define ECHO_PIN D6
 
+HCSR04 hcsr04(TRIG_PIN, ECHO_PIN, 20, 4000);
+
 WFclass wifi;
 
 const String publishTopic("dblab/hands-on/mqtt/distance/out");
-const String mqttServer("iot.eclipse.org");
+const String mqttServer("emqx.dbserver.com.br");
 const int mqttServerPort = 1883;
 MqttClient mqttClient(mqttServer, mqttServerPort);
 
-/* Speed of sound is 343 m/s, or 0.343 mm/us. */
-const double soundSpeed = 0.340; //343 * 1000.0 / 1000000.0;
-
 int lastTimeMsg = 0;
-
-long readUltrasonicDistance()
-{
-  digitalWrite(TRIG_PIN, LOW);
-  delayMicroseconds(2);
-  digitalWrite(TRIG_PIN, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(TRIG_PIN, LOW);
-
-  long distance = pulseIn(ECHO_PIN, HIGH);
-  return distance;
-}
 
 void printBanner()
 {
@@ -66,28 +54,32 @@ void setup()
 
   wifi.connect();
   mqttClient.connect();
-  
+
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
 /* Função de repetição. Ela fica sendo chamada repetidamente durante a execução
- *   do programa. */
+     do programa. */
 void loop()
 {
+  if (!mqttClient.connected()) mqttClient.connect();
   mqttClient.loop();
 
-  /* A cada 500 milisegundos publica-se a distância lida pelo sensor. */
-  long now = millis();  
-  if (now - lastTimeMsg > 500)
+  /* A cada 1000 milisegundos publica-se a distância lida pelo sensor. */
+  long now = millis();
+  if (now - lastTimeMsg > 1000)
   {
     lastTimeMsg = now;
-   
-    /* Divide por dois, pois o pulso de som vai e volta. */
-    double distance = (soundSpeed / 2) * readUltrasonicDistance();
-    String mm = String(distance);
-    String msg = String("Dist: " + mm + "mm");
 
-    Serial.println(msg);
-    mqttClient.publish(publishTopic, msg);
+    double distance = hcsr04.distanceInMillimeters();
+    if (distance > 0)
+    {
+      String mm = String(distance);
+      String msg = String("Dist: " + mm + "mm");
+
+      Serial.println(msg);
+      mqttClient.publish(publishTopic, msg);
+
+    }
   }
 }

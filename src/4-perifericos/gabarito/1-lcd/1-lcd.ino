@@ -25,7 +25,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 WFclass wifi;
 
 const String subscribeTopic("dblab/hands-on/mqtt/lcd/in");
-const String mqttServer("iot.eclipse.org");
+const String mqttServer("emqx.dbserver.com.br");
 const int mqttServerPort = 1883;
 MqttClient mqttClient(mqttServer, mqttServerPort);
 
