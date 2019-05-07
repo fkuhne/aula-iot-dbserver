@@ -12,9 +12,19 @@
  *
  */
 #include <hcsr04.h>
+#include "wifi.h"
+#include "mqtt.h"
 
 #define TRIG_PIN D5
 #define ECHO_PIN D6
+
+WFclass wifi;
+
+const String publishTopic("dblab/hands-on/mqtt/out");
+const String subscribeTopic("dblab/hands-on/mqtt/in");
+const String mqttServer("emqx.dbserver.com.br");
+const int mqttServerPort = 1883;
+MqttClient mqttClient(mqttServer, mqttServerPort);
 
 HCSR04 hcsr04(TRIG_PIN, ECHO_PIN, 20, 4000);
 
@@ -38,25 +48,45 @@ void setup()
   Serial.begin(9600);
   Serial.println();
   printBanner();
+//  pinMode(LED_BUILTIN, OUTPUT);
+//  digitalWrite(LED_BUILTIN, LOW);
+//  digitalWrite(LED_BUILTIN, HIGH);
 
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
+
+  wifi.connect();
+
+  /* Atenção: chamadas às funções subscribe e setCallback precisam
+   *  ser posteriores à chamada à função connect. */
+  mqttClient.connect();
+  mqttClient.subscribe(subscribeTopic);
+//  mqttClient.setCallback(callback);
   
-  digitalWrite(LED_BUILTIN, HIGH);
 }
 
 /* Função de repetição. Ela fica sendo chamada repetidamente durante a execução
  *   do programa. */
 void loop()
 {
+
+    if (!mqttClient.connected())
+  {
+    mqttClient.connect();
+    mqttClient.subscribe(subscribeTopic);
+  }
+  mqttClient.loop();
+  
   /* A cada 500 milisegundos publica-se a distância lida pelo sensor. */
   long now = millis();  
   if (now - lastTimeMsg > 1000)
   {
     lastTimeMsg = now;
+    if(hcsr04.distanceInMillimeters() <  300)  {
+    mqttClient.publish(publishTopic, "Esta Perto:  " +  String(hcsr04.distanceInMillimeters()));
+}
     
-    Serial.println(hcsr04.distanceInMillimeters());
-   
+    if(hcsr04.distanceInMillimeters() >  300)    {
+     mqttClient.publish(publishTopic, "Esta Longe:  " +  String(hcsr04.distanceInMillimeters()));
+}
+    
   }
 }
-
