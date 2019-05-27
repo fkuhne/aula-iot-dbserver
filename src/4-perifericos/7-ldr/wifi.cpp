@@ -58,3 +58,4 @@ void WFclass::connect()
   Serial.println(WiFi.status());
   Serial.println();
 }
+

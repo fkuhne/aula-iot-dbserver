@@ -1,13 +1,10 @@
 /*
  * DBLab - DBServer
- * Oficina prática de Internet das Coisas
+ * IOTAR
  *
- * 06/2018
+ * Arquivo .cpp, implementação da classe MqttClient.
  *
- * Arquivo .h, header, define da interface dos
- * metodos publicos, variáveris e constantes 
- * privadas da classe MqttClient.
- *
+ * 10/2018
  */
   
 /* ------------------- MqttClient ------------------- */
@@ -24,6 +21,7 @@ class MqttClient
 
     void setCallback(void (*callback)(char*, uint8_t*, unsigned int)); // Configura callback para tratar mensagens
     boolean subscribe(const String &topic); // Inscrição em um tópico
+    boolean unsubscribe(const String &topic); // Desinscrição em um tópico
     boolean publish(const String &topic, const String &payload); // Função para publicar mensagens
 
   private:
@@ -34,3 +32,4 @@ class MqttClient
     WiFiClient wifiClient;
     PubSubClient* mqttClient;
 };
+

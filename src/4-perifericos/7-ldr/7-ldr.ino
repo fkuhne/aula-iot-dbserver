@@ -1,38 +1,19 @@
-/*
- * DBLab - DBServer
- * Oficina prática de Internet das Coisas
- *
- * 06/2018
- *
- *
- * EXERCÍCIO 3.1: CLIENTE MQTT SIMPLES 
- * 
- * Este código cria um cliente MQTT, conecta-se em um broker, e
- *   envia dados simples a ele.
- *
- * Procure pelos TODO's no código e complete com a função necessária para
- *   implementar a função referida.
- */
-
 #include "wifi.h"
 #include "mqtt.h"
 
 WFclass wifi;
 
 const String publishTopic("dblab/hands-on/mqtt/out/211");
-const String mqttServer("iot.eclipse.org");
+const String mqttServer("emqx.dbserver.com.br");
 const int mqttServerPort = 1883;
 
 MqttClient mqttClient(mqttServer, mqttServerPort);
 
+int value = 0;
 long lastTimeMsg = 0;
-
-#include <hcsr04.h>
-
-#define TRIG_PIN D5
-#define ECHO_PIN D6
-
-HCSR04 hcsr04(TRIG_PIN, ECHO_PIN, 20, 4000);
+int pino = A0;
+float valor = 0;
+String estadoLuz = "";
 
 void printBanner()
 {
@@ -56,7 +37,7 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
 
-  wifi.connect();
+ wifi.connect();
   mqttClient.connect();
   
   digitalWrite(LED_BUILTIN, HIGH);
@@ -66,22 +47,27 @@ void setup()
  *   do programa. */
 void loop()
 {
-  if(!mqttClient.connected()) mqttClient.connect();
   mqttClient.loop();
 
   long now = millis();
   if (now - lastTimeMsg > 1000)
   {
     lastTimeMsg = now;
-
-    Serial.println();
     
     /* Publica um "Hello World" a cada 2 segundos... */
-    String message("D: ");
-    message += String(hcsr04.distanceInMillimeters());
-    mqttClient.publish(publishTopic, message);
-
-    Serial.println("Mensagem publicada: " + message);
+    ++value;
+    
+    valor = analogRead(pino);
+    String estadoLuz(valor);
+    
+    if (valor > 500){
+      estadoLuz = "Luz Desligada";
+    } else {
+      estadoLuz = "Luz Ligada";
+    }
+   
+    mqttClient.publish(publishTopic, estadoLuz.c_str());
+    Serial.println("Mensagem publicada: " + estadoLuz);
     
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
   }

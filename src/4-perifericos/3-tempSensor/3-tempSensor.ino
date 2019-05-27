@@ -12,10 +12,24 @@
 
 */
 
+#include "wifi.h"
+#include "mqtt.h"
+
+const String publishTopic("dblab/hands-on/mqtt/out/210");
+const String mqttServer("emqx.dbserver.com.br");
+const int mqttServerPort = 1883;
+
+WFclass wifi;
+MqttClient mqttClient(mqttServer, mqttServerPort);
+
+int value = 0;
+long lastTimeMsg = 0;
+
 #include <DHT.h>
 
 #define MESSAGE_MAX_SIZE 50
 
+#define LED_PIN D5
 #define DHTPIN D1     // Define pino data do DHT.
 #define DHTTYPE DHT11   // Define o modelo do DHT, 11 (AM2302)
 DHT dht(DHTPIN, DHTTYPE); //// Inicializa sensor de temperatura DHT.
@@ -41,19 +55,27 @@ void setup()
   Serial.println();
   printBanner();
 
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
+  //pinMode(LED_BUILTIN, OUTPUT);
+  //digitalWrite(LED_BUILTIN, LOW);
+
+  pinMode(LED_PIN, OUTPUT);
 
   // Inicializa sensor de temperatura.
   dht.begin();
+  wifi.connect();
+  mqttClient.connect();
 
-  digitalWrite(LED_BUILTIN, HIGH);
+  //digitalWrite(LED_BUILTIN, HIGH);
+
 }
 
 /* Função de repetição. Ela fica sendo chamada repetidamente durante a execução
      do programa. */
 void loop()
 {
+  if (!mqttClient.connected()) mqttClient.connect();
+  mqttClient.loop();
+
   long now = millis();
   if (now - lastTime > 2000)
   {
@@ -69,8 +91,26 @@ void loop()
     snprintf (temperature, MESSAGE_MAX_SIZE, "T: %02dC", (int)temp);
     snprintf (humidity, MESSAGE_MAX_SIZE, "H: %02d%%", (int)hum);
 
+    if ((int)temp < 100) {
+      mqttClient.publish(publishTopic, String(temperature) + " | " + String(humidity));
+    }
+    
+    if ((int)temp > 24) {
+      blink(2);
+    } else {
+      digitalWrite(LED_PIN, LOW);
+    }
+    Serial.println((int)temp);
     Serial.println(temperature);
     Serial.println(humidity);
   }
 }
-
+void blink(int times) {
+    int i;
+    for (i = 0; i < times; i++) {
+      digitalWrite(LED_PIN, HIGH);
+      delay(400);
+      digitalWrite(LED_PIN, LOW);
+      delay(300);
+    }
+}

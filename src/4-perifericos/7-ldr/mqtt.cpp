@@ -1,13 +1,12 @@
 /*
- * DBLab - DBServer
- * Oficina prática de Internet das Coisas
- *
- * 06/2018
- *
- * Arquivo .cpp, implementação da classe MqttClient.
- *
- */
- 
+   DBLab - DBServer
+   IOTAR
+
+   Arquivo .cpp, implementação da classe MqttClient.
+
+   10/2018
+*/
+
 /* ------------------- MqttClient ------------------- */
 #include "mqtt.h"
 
@@ -20,30 +19,30 @@ MqttClient::MqttClient(const String &mqttServer, const int mqttPort)
   byte mac[6];
   WiFi.macAddress(mac);
   String _deviceId = String(mac[0], HEX) + String(mac[1], HEX) + String(mac[2], HEX) +
-                    String(mac[3], HEX) + String(mac[4], HEX) + String(mac[5], HEX);
+                     String(mac[3], HEX) + String(mac[4], HEX) + String(mac[5], HEX);
 
   _mqttServer = mqttServer;
   _mqttPort = mqttPort;
 }
 
 // Funcão para efetuar conexão com servidor mqtt.
-void MqttClient::connect() 
+void MqttClient::connect()
 {
   Serial.print("Conectando-se ao broker MQTT " + _mqttServer);
-  Serial.print(":"); Serial.print(_mqttPort); 
+  Serial.print(":"); Serial.print(_mqttPort);
 
-  for(int count=0; count<=30; count++)
+  for (int count = 0; count <= 30; count++)
   {
     Serial.print(".");
 
-    if(mqttClient->connected())
+    if (mqttClient->connected())
       break;
 
-    if(mqttClient->connect(_deviceId.c_str()))
+    if (mqttClient->connect(_deviceId.c_str()))
     {
       Serial.println(" conectado!");
     }
-    else if(count==30)
+    else if (count == 30)
     {
       Serial.println(" desisto :(");
       ESP.restart();
@@ -53,14 +52,14 @@ void MqttClient::connect()
 }
 
 // Função para verificar conexão mqtt.
-int MqttClient::connected() 
+int MqttClient::connected()
 {
   return mqttClient->connected();
 }
 
 /* Função de repetição. Ela fica sendo chamada repetidamente durante a execução
- *   do programa. */
-void MqttClient::loop() 
+     do programa. */
+void MqttClient::loop()
 {
   mqttClient->loop();
 }
@@ -68,18 +67,31 @@ void MqttClient::loop()
 // Configura a função callback na biblioteca PubSubClient.
 void MqttClient::setCallback(void (*callback)(char*, uint8_t*, unsigned int))
 {
-  mqttClient->setCallback(callback); 
+  Serial.println("Configurando função de callback para recebimento de mensagens.");
+  mqttClient->setCallback(callback);
 }
 
- // Inscrição em um tópico
+// Inscrição em um tópico
 boolean MqttClient::subscribe(const String &topic)
 {
-  Serial.println("Fazendo inscrição no tópico " + topic);
+  Serial.println("Fazendo inscrição no tópico \"" + topic + "\"");
   return mqttClient->subscribe(topic.c_str());
 }
 
-// Publica mensagens.
-boolean MqttClient::publish(const String &topic, const String &payload) 
+// Desinscrição em um tópico
+boolean MqttClient::unsubscribe(const String &topic)
 {
-  return mqttClient->publish(topic.c_str(), payload.c_str(), payload.length());
+  Serial.println("Desinscrevendo do tópico \"" + topic + "\"");
+  return mqttClient->unsubscribe(topic.c_str());
 }
+
+// Publica mensagens.
+boolean MqttClient::publish(const String &topic, const String &payload)
+{
+  int ret = mqttClient->publish(topic.c_str(), payload.c_str(), payload.length());
+  Serial.print("Publicando \"" + payload + "\" no tópico \"" + topic);
+  if (!ret) Serial.println("\" falhou :(");
+  else  Serial.println("\" com sucesso.");
+  return (boolean)ret;
+}
+
