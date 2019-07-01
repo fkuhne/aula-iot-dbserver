@@ -12,9 +12,19 @@
  *
  */
 #include <hcsr04.h>
+#include "wifi.h"
+#include "mqtt.h"
+
+WFclass wifi;
 
 #define TRIG_PIN D5
 #define ECHO_PIN D6
+
+const String publishTopic("dblab/hands-on/mqtt/blue");
+const String mqttServer("emqx.dbserver.com.br");
+const int mqttServerPort = 1883;
+
+MqttClient mqttClient(mqttServer, mqttServerPort);
 
 HCSR04 hcsr04(TRIG_PIN, ECHO_PIN, 20, 4000);
 
@@ -39,6 +49,9 @@ void setup()
   Serial.println();
   printBanner();
 
+  wifi.connect();
+  mqttClient.connect();
+
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
   
@@ -49,14 +62,22 @@ void setup()
  *   do programa. */
 void loop()
 {
+  if (!mqttClient.connected()) mqttClient.connect();
+  mqttClient.loop();
+  
   /* A cada 500 milisegundos publica-se a distância lida pelo sensor. */
   long now = millis();  
   if (now - lastTimeMsg > 1000)
   {
     lastTimeMsg = now;
+    int distancia = hcsr04.distanceInMillimeters();
     
-    Serial.println(hcsr04.distanceInMillimeters());
+    String message("Distancia:");
+    message += String(distancia, DEC);
+
+    Serial.println(message);
+    
+    mqttClient.publish(publishTopic, message.c_str());
    
   }
 }
-

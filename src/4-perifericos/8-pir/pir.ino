@@ -3,10 +3,13 @@
 
 #define LED_PIN D5 //LED_BUILTIN
 #define BUTTON_PIN D0 //D3 is the 'Flash' button
+#define PINO_SEN D2 
+int state = LOW;             // by default, no motion detected
+int val = 0;
 
 WFclass wifi;
 
-const String publishTopic("dblab/hands-on/mqtt/out");
+const String publishTopic("dblab/hands-on/mqtt/amarelo");
 const String subscribeTopic("dblab/hands-on/mqtt/in");
 const String mqttServer("emqx.dbserver.com.br");
 const int mqttServerPort = 1883;
@@ -32,6 +35,8 @@ void setup()
   Serial.begin(9600);
   Serial.println();
   printBanner();
+
+  pinMode(PINO_SEN, INPUT);
 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
@@ -66,9 +71,38 @@ void callback(char *topic, byte *payload, unsigned int length)
   else if (!strncmp(message, "off", 3)) digitalWrite(LED_PIN, LOW);
 }
 
-void loop()
-{
-  if (!mqttClient.connected())
+void loop(){
+
+ if (!mqttClient.connected())
+  {
+    mqttClient.connect();
+  }
+  mqttClient.loop();
+  
+  val = digitalRead(PINO_SEN);   // read sensor value
+  
+  mqttClient.publish(publishTopic, "Teste Lido Amarelo" + val);
+  Serial.println(val); 
+  if (val == HIGH) {           // check if the sensor is HIGH
+    digitalWrite(LED_PIN, HIGH);   // turn LED ON
+    delay(100);                // delay 100 milliseconds 
+    
+    if (state == LOW) {
+      Serial.println("Motion detected!"); 
+      state = HIGH;       // update variable state to HIGH
+    }
+  } 
+  else {
+      digitalWrite(LED_PIN, LOW); // turn LED OFF
+      delay(200);             // delay 200 milliseconds 
+      
+      if (state == HIGH){
+        Serial.println("Motion stopped!");
+        state = LOW;       // update variable state to LOW
+    }
+  }  
+  
+  /*if (!mqttClient.connected())
   {
     mqttClient.connect();
     mqttClient.setCallback(callback);
@@ -92,9 +126,11 @@ void loop()
       mqttClient.publish(publishTopic, message);
 
       /* TODO: publique o estado do botão no tópico de entrada,
-           com mensagens "on" e "off". */
+           com mensagens "on" e "off". /
+      if (buttonState == HIGH) mqttClient.publish(subscribeTopic, "on");
+      else mqttClient.publish(subscribeTopic, "off");
     }
-  }
+  }*/
 
   delay(10); /* Dá um tempo para o processador respirar... */
 }

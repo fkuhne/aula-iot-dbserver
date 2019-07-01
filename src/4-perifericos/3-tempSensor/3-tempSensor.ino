@@ -13,12 +13,21 @@
 */
 
 #include <DHT.h>
+#include "wifi.h"
+#include "mqtt.h"
 
 #define MESSAGE_MAX_SIZE 50
-
 #define DHTPIN D1     // Define pino data do DHT.
 #define DHTTYPE DHT11   // Define o modelo do DHT, 11 (AM2302)
 DHT dht(DHTPIN, DHTTYPE); //// Inicializa sensor de temperatura DHT.
+
+WFclass wifi;
+
+const String publishTopic("dblab/hands-on/mqtt/out/verde");
+const String mqttServer("emqx.dbserver.com.br");
+const int mqttServerPort = 1883;
+
+MqttClient mqttClient(mqttServer, mqttServerPort);
 
 int lastTime = 0;
 
@@ -46,6 +55,10 @@ void setup()
 
   // Inicializa sensor de temperatura.
   dht.begin();
+  
+  wifi.connect();
+  mqttClient.connect();
+
 
   digitalWrite(LED_BUILTIN, HIGH);
 }
@@ -54,6 +67,9 @@ void setup()
      do programa. */
 void loop()
 {
+  if (!mqttClient.connected()) mqttClient.connect();
+  mqttClient.loop();
+  
   long now = millis();
   if (now - lastTime > 2000)
   {
@@ -69,8 +85,10 @@ void loop()
     snprintf (temperature, MESSAGE_MAX_SIZE, "T: %02dC", (int)temp);
     snprintf (humidity, MESSAGE_MAX_SIZE, "H: %02d%%", (int)hum);
 
+    mqttClient.publish(publishTopic, temperature);
+    mqttClient.publish(publishTopic, humidity);
+
     Serial.println(temperature);
     Serial.println(humidity);
   }
 }
-
