@@ -97,4 +97,4 @@ void loop()
   }
 
   delay(10); /* Dá um tempo para o processador respirar... */
-}.
+}
